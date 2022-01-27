@@ -310,7 +310,7 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
             return [null, history[1]];
         } else {
             children = game.ugly_moves({verbose: true});
-            //sortMoves(children);
+            sortMoves(children);
             var preMoveIndex;
             for (var i = 0; i < children.length; i++){
                 if (JSON.stringify(children[i]) == JSON.stringify(history[0])){
