@@ -314,7 +314,7 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
             return [null, history[1]];
         } else {
             children = game.ugly_moves({verbose: true});
-            chidlren.sort(() => {return 0.5 - Math.random()});
+            children.sort(() => {return 0.5 - Math.random()});
             //sortMoves(children);
             var preMoveIndex;
             for (var i = 0; i < children.length; i++){
@@ -332,7 +332,7 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
     
     if (children == undefined){
         children = game.ugly_moves({verbose: true});
-        chidlren.sort(() => {return 0.5 - Math.random()});
+        children.sort(() => {return 0.5 - Math.random()});
         //sortMoves(children);
     }
 
