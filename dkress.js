@@ -380,11 +380,12 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
     }
 
     globalSum = newSum;
-    zobristHistory[calculateZobrist(game.board())] = [bestMoveVerbose, globalSum, depth];
-
+    
     if (isMaximizingPlayer){
+        zobristHistory[calculateZobrist(game.board())] = [bestMoveVerbose, maxValue, depth];
         return [bestMove, maxValue];
     } else {
+        zobristHistory[calculateZobrist(game.board())] = [bestMoveVerbose, minValue, depth];
         return [bestMove, minValue];
     }
 }
