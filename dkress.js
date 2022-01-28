@@ -148,7 +148,7 @@ All possible moves are calculated through the handy method game.ugly_moves();
 */
 
 var maxDepth = 5;
-var initialDepth = 0;
+var initialDepth = 1;
 var positionsEvaluated = 0;
 var globalSum = 0;
 var bestMove;
@@ -258,44 +258,48 @@ function evaluateBoard(move, prevSum, color){
     return prevSum;
 }
 
-//import flags and bits from chess.js
-var FLAGS = {
-    NORMAL: 'n',
-    CAPTURE: 'c',
-    BIG_PAWN: 'b',
-    EP_CAPTURE: 'e',
-    PROMOTION: 'p',
-    KSIDE_CASTLE: 'k',
-    QSIDE_CASTLE: 'q',
-}
+// MVV_VLA[victim][attacker]
+const MVV_LVA = [
+    [0, 0, 0, 0, 0, 0, 0],       // victim K, attacker K, Q, R, B, N, P, None
+    [50, 51, 52, 53, 54, 55, 0], // victim Q, attacker K, Q, R, B, N, P, None
+    [40, 41, 42, 43, 44, 45, 0], // victim R, attacker K, Q, R, B, N, P, None
+    [30, 31, 32, 33, 34, 35, 0], // victim B, attacker K, Q, R, B, N, P, None
+    [20, 21, 22, 23, 24, 25, 0], // victim N, attacker K, Q, R, B, N, P, None
+    [10, 11, 12, 13, 14, 15, 0], // victim P, attacker K, Q, R, B, N, P, None
+    [0, 0, 0, 0, 0, 0, 0],       // victim None, attacker K, Q, R, B, N, P, None
+];
 
-var BITS = {
-    NORMAL: 1,
-    CAPTURE: 2,
-    BIG_PAWN: 4,
-    EP_CAPTURE: 8,
-    PROMOTION: 16,
-    KSIDE_CASTLE: 32,
-    QSIDE_CASTLE: 64,
+function MVV_LVACALC(piece){
+    switch (piece){
+        case "k":
+            return 0;
+            break;
+        case "q":
+            return 1;
+            break;
+        case "r":
+            return 2;
+            break;
+        case "b":
+            return 3;
+            break;
+        case "n":
+            return 4;
+            break;
+        case "p":
+            return 5;
+            break;
+        case undefined:
+            return 6;
+            break;
+    }
 }
 
 function sortMoves(children){
     for (var i = 0; i < children.length; i++){
-        //generate pretty flags
+        //victim, attacker||Victim is opponent, attacker is me
         const move = children[i];
-        var flags = "";
-        
-        for (var flag in BITS){
-            if (BITS[flag] & move.flags){
-                flags += FLAGS[flag];
-            }
-        }
-        
-        move.prettyFlags = flags;
-        
-        move.importance = 0
-            + move.prettyFlags.includes("p") ? 16 : 0
-            + move.prettyFlags.includes("c") ? 8 : 0;
+        move.importance = MVV_LVA[MVV_LVACALC(move.captured)][MVV_LVACALC(move.piece)];
     }
     children.sort((a, b) => b.importance - a.importance);
 }
@@ -310,7 +314,8 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
             return [null, history[1]];
         } else {
             children = game.ugly_moves({verbose: true});
-            sortMoves(children);
+            chidlren.sort(() => {return 0.5 - Math.random()});
+            //sortMoves(children);
             var preMoveIndex;
             for (var i = 0; i < children.length; i++){
                 if (JSON.stringify(children[i]) == JSON.stringify(history[0])){
@@ -327,7 +332,8 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
     
     if (children == undefined){
         children = game.ugly_moves({verbose: true});
-        sortMoves(children);
+        chidlren.sort(() => {return 0.5 - Math.random()});
+        //sortMoves(children);
     }
 
     if (depth == 0 || children.length == 0){
@@ -374,12 +380,11 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
     }
 
     globalSum = newSum;
+    zobristHistory[calculateZobrist(game.board())] = [bestMoveVerbose, globalSum, depth];
 
     if (isMaximizingPlayer){
-        zobristHistory[calculateZobrist(game.board())] = [bestMoveVerbose, maxValue, depth];
         return [bestMove, maxValue];
     } else {
-        zobristHistory[calculateZobrist(game.board())] = [bestMoveVerbose, minValue, depth];
         return [bestMove, minValue];
     }
 }
