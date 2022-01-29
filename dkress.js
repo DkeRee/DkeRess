@@ -199,7 +199,6 @@ function evaluateBoard(move, prevSum, color){
     //value of second index of array is the letter of horizontal row
     const from = [8 - Number(move.from[1]), move.from.charCodeAt(0) - 'a'.charCodeAt(0)]; //from whence the piece came from
     const to = [8 - Number(move.to[1]), move.to.charCodeAt(0) - 'a'.charCodeAt(0)]; //where the piece is now
-    const board = game.board();
     var whitePieces = 0;
     var blackPieces = 0;
 
@@ -208,10 +207,14 @@ function evaluateBoard(move, prevSum, color){
     if (game.in_checkmate()){
         if (move.color === color){
             //we checkmated opponent
-            prevSum += 10 ** 10;
+            return 10 ** 10;
         } else {
-            prevSum -= 10 ** 10;
+            return -(10 ** 10);
         }
+    }
+    
+    if (game.in_draw() || game.in_threefold_repetition() || game.in_stalemate()){
+        return 0;
     }
 
     if (prevSum < -1500){
@@ -301,47 +304,110 @@ function sortMoves(children){
         const move = children[i];
         move.importance = MVV_LVA[MVV_LVACALC(move.captured)][MVV_LVACALC(move.piece)];
     }
-    children.sort((a, b) => b.importance - a.importance);
+    children.sort((a, b) => {return b.importance - a.importance});
+}
+
+function qSearch(sum, color, alpha, beta, isMaximizingPlayer){
+    var standPat = sum;
+    if (standPat >= beta) return beta;
+    if (standPat > alpha) alpha = standPat;
+
+    const allCaptures = game.ugly_moves({verbose: true}).filter(move => "captured" in move);
+    sortMoves(allCaptures);
+
+    if (allCaptures.length == 0){
+        return sum;
+    }
+    
+    var maxValue = -Infinity;
+    var minValue = Infinity;
+    
+    for (var i = 0; i < allCaptures.length; i++){
+        const currentMove = allCaptures[i];
+        const currentPrettyMove = game.ugly_move(currentMove);
+        
+        const newSum = evaluateBoard(currentPrettyMove, sum, color);
+        const qResult = qSearch(newSum, color, alpha, beta, !isMaximizingPlayer);
+
+        game.undo();
+
+        if (qResult >= beta) return beta;
+        if (qResult > alpha) alpha = qResult;
+        if (alpha >= beta) break;
+/*
+        if (qResult >= beta) return beta;
+        if (qResult > alpha) alpha = qResult;
+
+        if (isMaximizingPlayer){
+            if (qResult > maxValue){
+                maxValue = qResult;
+            }
+            if (qResult > alpha){
+                alpha = qResult;
+            }
+        } else {
+            if (qResult < minValue){
+                minValue = qResult;
+            }
+            if (qResult < beta){
+                beta = qResult;
+            }
+        }
+*/  
+    }
+    
+    return alpha;
+
+    /*
+    if (isMaximizingPlayer){
+        return maxValue;
+    } else {
+        return minValue;
+    }
+    */
 }
 
 function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
     var children;
-    
+
     //check for pre-existing calculated nodes
     const history = zobristHistory[calculateZobrist(game.board())];
     if (history){
-        if (history[2] > depth){
-            return [null, history[1]];
+        if (history.depth > depth && ((history.state == "over" && history.score < alpha) || (history.state == "under" && history.score > beta))){
+            return [null, history.score];
         } else {
             children = game.ugly_moves({verbose: true});
             children.sort(() => {return 0.5 - Math.random()});
             //sortMoves(children);
             var preMoveIndex;
             for (var i = 0; i < children.length; i++){
-                if (JSON.stringify(children[i]) == JSON.stringify(history[0])){
+                if (JSON.stringify(children[i]) == JSON.stringify(history.bestMoveVerbose)){
                     preMoveIndex = i;
                     break;
                 }
             }
             if (preMoveIndex){
                 children.splice(preMoveIndex, 1);
-                children.unshift(history[0]);
+                children.unshift(history.bestMoveVerbose);
             }
         }
     }
     
     if (children == undefined){
         children = game.ugly_moves({verbose: true});
-        children.sort(() => {return 0.5 - Math.random()});
-        //sortMoves(children);
+        //children.sort(() => {return 0.5 - Math.random()});
+        sortMoves(children);
     }
 
+    //qSearch(sum, color, alpha, beta, isMaximizingPlayer)
+    
     if (depth == 0 || children.length == 0){
         return [null, sum];
     }
 
     var maxValue = -Infinity;
     var minValue = Infinity;
+    var state;
     var newSum;
     var bestMoveVerbose;
     var bestMove;
@@ -376,16 +442,33 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
 
         game.undo();
 
-        if (alpha >= beta) break;
+        if (alpha >= beta){
+            if (isMaximizingPlayer){
+                state = "under";
+            } else {
+                state = "over";
+            }
+            break;
+        }
     }
 
     globalSum = newSum;
-    
+
     if (isMaximizingPlayer){
-        zobristHistory[calculateZobrist(game.board())] = [bestMoveVerbose, maxValue, depth];
+        zobristHistory[calculateZobrist(game.board())] = {
+            bestMoveVerbose: bestMoveVerbose,
+            score: maxValue,
+            state: state,
+            depth: depth
+        };
         return [bestMove, maxValue];
     } else {
-        zobristHistory[calculateZobrist(game.board())] = [bestMoveVerbose, minValue, depth];
+        zobristHistory[calculateZobrist(game.board())] = {
+            bestMoveVerbose: bestMoveVerbose,
+            score: minValue,
+            state: state,
+            depth: depth
+        };
         return [bestMove, minValue];
     }
 }
