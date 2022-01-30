@@ -190,7 +190,7 @@ async function dkeress(game, alpha, beta, isMaximizingPlayer, color){
         positionsEvaluated = 0;
         initialDepth = 1;
         return bestMove[0];
-    }
+    }   
 }
 
 function calculateZobrist(boardCache){
@@ -334,13 +334,8 @@ function sortMoves(children){
 }
 
 function qSearch(sum, color, alpha, beta, isMaximizingPlayer){
-    var standPat = sum;
-    if (standPat >= beta) return beta;
-    if (standPat > alpha) alpha = standPat;
-
     const allCaptures = game.ugly_moves({verbose: true}).filter(move => "captured" in move);
-    sortMoves(allCaptures);
-
+    
     if (allCaptures.length == 0){
         return sum;
     }
@@ -354,16 +349,7 @@ function qSearch(sum, color, alpha, beta, isMaximizingPlayer){
         
         const newSum = evaluateBoard(currentPrettyMove, sum, color);
         const qResult = qSearch(newSum, color, alpha, beta, !isMaximizingPlayer);
-
-        game.undo();
-
-        if (qResult >= beta) return beta;
-        if (qResult > alpha) alpha = qResult;
-        if (alpha >= beta) break;
-/*
-        if (qResult >= beta) return beta;
-        if (qResult > alpha) alpha = qResult;
-
+        
         if (isMaximizingPlayer){
             if (qResult > maxValue){
                 maxValue = qResult;
@@ -379,23 +365,21 @@ function qSearch(sum, color, alpha, beta, isMaximizingPlayer){
                 beta = qResult;
             }
         }
-*/  
+        
+        game.undo();
+        
+        if (alpha >= beta) break;
     }
     
-    return alpha;
-
-    /*
     if (isMaximizingPlayer){
         return maxValue;
     } else {
         return minValue;
     }
-    */
 }
 
 function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
     var children;
-
     //check for pre-existing calculated nodes
     const history = zobristHistory[calculateZobrist(game.board())];
     if (history){
@@ -421,8 +405,8 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
     
     if (children == undefined){
         children = game.ugly_moves({verbose: true});
-        //children.sort(() => {return 0.5 - Math.random()});
-        sortMoves(children);
+        children.sort(() => {return 0.5 - Math.random()});
+        //sortMoves(children);
     }
 
     //qSearch(sum, color, alpha, beta, isMaximizingPlayer)
