@@ -1363,6 +1363,10 @@ var Chess = function (fen) {
       return reset()
     },
 
+    move_from_san: function(move, sloppy){
+      return make_pretty(move_from_san(move, sloppy));
+    },
+
     moves: function (options) {
       /* The internal representation of a chess move is in 0x88 format, and
        * not meant to be human-readable.  The code below converts the 0x88

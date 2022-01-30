@@ -1,5 +1,6 @@
 var game = new Chess()
 var prompt = prompt("white or black *racially motivated*");
+const color = prompt;
 
 function onDragStart (source, piece, position, orientation) {
 	// do not pick up pieces if the game is over
@@ -12,6 +13,16 @@ function onDragStart (source, piece, position, orientation) {
     }
 }
 
+async function makeMove(){
+    const calc = await dkeress(game, -Infinity, Infinity, true, color);
+    game.move({
+        from: calc.from,
+        to: calc.to,
+        promotion: 'q'
+    });
+    board.position(game.fen());
+}
+
 function onDrop (source, target) {
     // see if the move is legal
     var move = game.move({
@@ -20,22 +31,8 @@ function onDrop (source, target) {
       promotion: 'q' // NOTE: always promote to a queen for example simplicity
     })
 
-    if (game.turn() === "w" && prompt == "white"){
-        const calc = dkeress(game, -Infinity, Infinity, true, "w")[0];
-        game.move({
-            from: calc.from,
-            to: calc.to,
-            promotion: 'q'
-        });
-    }
-
-    if (game.turn() === "b" && prompt == "black"){
-    	const calc = dkeress(game, -Infinity, Infinity, true, "b")[0];
-    	game.move({
-    		from: calc.from,
-    		to: calc.to,
-    		promotion: 'q'
-    	});
+    if (game.turn() == color){
+        makeMove();
     }
 
     // illegal move

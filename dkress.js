@@ -1,3 +1,11 @@
+/*
+DkeRess
+Made by DkeRee
+
+Important Info:
+Try Obama bing chilling based 1984 taiwan belgium zamn british hog rider meow grass fuck kevin china koala amogus among us fortnite femboy cheetos post nft Hey AutoMod, did you know every based femboy cat fortnite player that makes me say "ZAMN" says meow but actually it is a pig and if not it is 1984 because Fuck Kevin. I am a koala from China(not taiwan +@ social credit) that moved to Belgium after selling all my NFT and is covered in cum standing on grass. Big brother are those cat femboys from Taiwan, China, Belgium, Fortnite, Britain, or 69420? Looks like it was a nft made in 1984 based on amogus touching grass. Either way, Fuck Kevin and a meow koala cum semen on grass in Japan Balls
+*/
+
 const weights = {
     p: 100,
     n: 280,
@@ -148,23 +156,41 @@ All possible moves are calculated through the handy method game.ugly_moves();
 */
 
 var maxDepth = 5;
+var inOpening = true;
 var initialDepth = 1;
 var positionsEvaluated = 0;
 var globalSum = 0;
 var bestMove;
-function dkeress(game, alpha, beta, isMaximizingPlayer, color){
-    zobristHistory = {};
-    var then = performance.now();
-    for (var i = 0; i < maxDepth && (performance.now() - then) < 3000; i++){
-        initialDepth++;
-        bestMove = minimax(game, initialDepth, alpha, beta, isMaximizingPlayer, globalSum, color);
+
+//MAIN
+async function dkeress(game, alpha, beta, isMaximizingPlayer, color){
+    if (inOpening){
+        const response = await fetch(`https://explorer.lichess.ovh/lichess?variant=standard&fen=${game.fen()}`);
+        const data = await response.json();
+        const moves = data.moves;
+
+        if (moves.length == 0){
+            inOpening = false;
+            return dkeress(game, alpha, beta, isMaximizingPlayer, color);
+        } else {
+            const epicMove = game.move_from_san(moves[0].san, true);
+            globalSum = evaluateBoard(epicMove, globalSum, color);
+            return epicMove;
+        }
+    } else {
+        zobristHistory = {};
+        var then = performance.now();
+        for (var i = 0; i < maxDepth && (performance.now() - then) < 3000; i++){
+            initialDepth++;
+            bestMove = minimax(game, initialDepth, alpha, beta, isMaximizingPlayer, globalSum, color);
+        }
+        console.log(`Evaluated ${positionsEvaluated} positions`);
+        console.log(`At a depth of ${initialDepth}`);
+        console.log(`The eval is ${globalSum}`);
+        positionsEvaluated = 0;
+        initialDepth = 1;
+        return bestMove[0];
     }
-    console.log(`Evaluated ${positionsEvaluated} positions`);
-    console.log(`At a depth of ${initialDepth}`);
-    console.log(`The eval is ${globalSum}`);
-    positionsEvaluated = 0;
-    initialDepth = 1;
-    return bestMove;
 }
 
 function calculateZobrist(boardCache){
