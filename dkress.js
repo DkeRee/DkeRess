@@ -113,6 +113,7 @@ const self = {
 //initialize tranpsposition table for zobrist hashing
 const transpositionTable = [];
 var zobristHistory = {};
+var killerMoves = {};
 for (var i = 0; i < 8; i++){
     const column = [];
     for (var j = 0; j < 8; j++){
@@ -179,6 +180,7 @@ async function dkeress(game, alpha, beta, isMaximizingPlayer, color){
         }
     } else {
         zobristHistory = {};
+        killerMoves = {};
         var then = performance.now();
         for (var i = 0; i < maxDepth && (performance.now() - then) < 3000; i++){
             initialDepth++;
@@ -378,6 +380,14 @@ function qSearch(sum, color, alpha, beta, isMaximizingPlayer){
     }
 }
 
+function insertKiller(killerMoves, depth, bestMoveVerbose){
+    const killerMoveBranch = killerMoves[depth];
+    if (killerMoveBranch.length == 2){
+        killerMoveBranch.shift();
+    }
+    killerMoveBranch.push(bestMoveVerbose);
+}
+
 function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
     var children;
     //check for pre-existing calculated nodes
@@ -387,8 +397,8 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
             return [null, history.score];
         } else {
             children = game.ugly_moves({verbose: true});
-            children.sort(() => {return 0.5 - Math.random()});
-            //sortMoves(children);
+            //children.sort(() => {return 0.5 - Math.random()});
+            sortMoves(children);
             var preMoveIndex;
             for (var i = 0; i < children.length; i++){
                 if (JSON.stringify(children[i]) == JSON.stringify(history.bestMoveVerbose)){
@@ -407,6 +417,19 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
         children = game.ugly_moves({verbose: true});
         children.sort(() => {return 0.5 - Math.random()});
         //sortMoves(children);
+    }
+
+    //sort killer moves
+    if (killerMoves[depth]){
+        for (var i = 0; i < killerMoves[depth].length; i++){
+            for (var s = 0; s < children.length; s++){
+                if (JSON.stringify(children[s]) == JSON.stringify(killerMoves[depth][i])){
+                    children.splice(s, 1);
+                    children.unshift(killerMoves[depth][i]);
+                    break;
+                }
+            }
+        }
     }
 
     //qSearch(sum, color, alpha, beta, isMaximizingPlayer)
@@ -451,6 +474,17 @@ function minimax(game, depth, alpha, beta, isMaximizingPlayer, sum, color){
         }
 
         game.undo();
+
+        if (childValue >= beta){
+            if (!("captured" in currentPrettyMove)){
+                if (killerMoves[depth]){
+                    insertKiller(killerMoves, depth, bestMoveVerbose);
+                } else {
+                    killerMoves[depth] = [];
+                    insertKiller(killerMoves, depth, bestMoveVerbose);
+                }
+            }
+        }
 
         if (alpha >= beta){
             if (isMaximizingPlayer){
