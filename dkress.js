@@ -180,6 +180,7 @@ async function dkeress(game, alpha, beta, isMaximizingPlayer, color){
                 return epicMove;
             }
         } else {
+            inOpening = false;
             return dkeress(game, alpha, beta, isMaximizingPlayer, color);
         }
     } else {
