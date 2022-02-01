@@ -170,13 +170,17 @@ async function dkeress(game, alpha, beta, isMaximizingPlayer, color){
         const data = await response.json();
         const moves = data.moves;
 
-        if (moves.length == 0){
-            inOpening = false;
-            return dkeress(game, alpha, beta, isMaximizingPlayer, color);
+        if (moves[0]){
+            if (moves.length == 0){
+                inOpening = false;
+                return dkeress(game, alpha, beta, isMaximizingPlayer, color);
+            } else {
+                const epicMove = game.move_from_san(moves[0].san, true);
+                globalSum = evaluateBoard(epicMove, globalSum, color);
+                return epicMove;
+            }
         } else {
-            const epicMove = game.move_from_san(moves[0].san, true);
-            globalSum = evaluateBoard(epicMove, globalSum, color);
-            return epicMove;
+            return dkeress(game, alpha, beta, isMaximizingPlayer, color);
         }
     } else {
         zobristHistory = {};
