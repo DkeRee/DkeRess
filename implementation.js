@@ -54,3 +54,5 @@ var config = {
 }
 
 var board = Chessboard("myBoard", config);
+
+if (prompt == "b") board.flip();

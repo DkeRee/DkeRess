@@ -166,11 +166,11 @@ var bestMove;
 //MAIN
 async function dkeress(game, alpha, beta, isMaximizingPlayer, color){
     if (inOpening){
-        const response = await fetch(`https://explorer.lichess.ovh/lichess?variant=standard&fen=${game.fen()}`);
+        const response = await fetch(`https://www.chessdb.cn/cdb.php?action=queryall&json=1&board=${game.fen()}`);
         const data = await response.json();
         const moves = data.moves;
 
-        if (moves[0]){
+        if (moves){
             if (moves.length == 0){
                 inOpening = false;
                 return dkeress(game, alpha, beta, isMaximizingPlayer, color);
